@@ -1,3 +1,4 @@
+import 'package:auth_firebase_phone_number/screens/home_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -27,6 +28,33 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool showLoading = false;
 
+  void signInWithPhoneAuthCredential(PhoneAuthCredential phoneAuthCredential) async{
+    setState(() {
+      showLoading = true;
+    });
+
+    
+    
+    try {
+      final authCredential= await _auth.signInWithCredential(phoneAuthCredential);
+
+      setState(() {
+        showLoading=false;
+      });
+      if(authCredential?.user != null){
+        Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+      }
+    } on FirebaseAuthException catch (e) {
+
+      setState(() {
+        showLoading = false;
+      });
+
+      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(e.message)));
+      // TODO
+    }
+  }
+
   getMobileWidgetState(context) {
     return Column(
       children: [
@@ -51,6 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   setState(() {
                     showLoading = false;
                   });
+                  //signInWithPhoneAuthCredential(phoneAuthCredential);
 
                 },
                 verificationFailed: (verificationFailed) async{
@@ -97,7 +126,11 @@ class _LoginScreenState extends State<LoginScreen> {
           height: 16,
         ),
         FlatButton(
-          onPressed: () {},
+          onPressed: () async{
+            PhoneAuthCredential phoneAuthCredential = PhoneAuthProvider.credential(verificationId: verificationId, smsCode: otpController.text);
+            signInWithPhoneAuthCredential(phoneAuthCredential);
+
+          },
           child: Text("enter OTP"),
           color: Colors.blue,
           textColor: Colors.white,
@@ -115,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       key: _scaffoldKey,
       body: Container(
-        child: currrantState == MobileVerificationState.SHOW_MOBILE_FORM_STATE ?
+        child: showLoading? Center(child: CircularProgressIndicator(),) :currrantState == MobileVerificationState.SHOW_MOBILE_FORM_STATE ?
         getMobileWidgetState(context) :
         getOtpWidgetState(context),
         padding: const EdgeInsets.all(16),
@@ -123,3 +156,5 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
+
+
